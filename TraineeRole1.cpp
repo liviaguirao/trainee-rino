@@ -4,6 +4,7 @@
 #include "Core/Utils/RobotDefs.h"
 #include "Core/Utils/CartesianCoord.h"
 
+#define kickDistance 0.18
 
 // ./build //dentro da pasta mari
 // scp src/build-rinobot-robot/sdk/bin/rinobot nao@169.254.44.123:/home/nao
@@ -82,7 +83,7 @@ void TraineeRole1::Tick(float ellapsedTime, const SensorValues &sensor)
 
 
 void TraineeRole1::penalti(){
-    if(spellBook->perception.vision.ball.BallDistance > 0.15)
+    if(spellBook->perception.vision.ball.BallDistance > kickDistance)
     {
         if(spellBook->perception.vision.ball.BallDetected)
         {
@@ -206,6 +207,7 @@ bool TraineeRole1::ProcuraDireita()
     }
     return false ;
 }
+
 bool TraineeRole1::ProcuraDireitaEmbaixo()
 {
     spellBook->motion.HeadPitch = Deg2Rad(70.0f);
@@ -236,10 +238,18 @@ bool TraineeRole1::ProcuraEsquerdaEmbaixo()
 
 void TraineeRole1::perseguir(){
     cout<<"distancia = "<< spellBook->perception.vision.ball.BallDistance <<endl<<endl;
-    if(spellBook->perception.vision.ball.BallDistance > 0.15 && spellBook->perception.vision.ball.BallDetected)
+    if(spellBook->perception.vision.ball.BallDistance > kickDistance && spellBook->perception.vision.ball.BallDetected)
     {
+        //esta longe da bola mas esta vendo ela
+        spellBook->motion.HeadPitch = -(spellBook->perception.vision.ball.BallPitch);
+        //as novas funcoes de procuraEsquerda/Direita sao incrementais, logo a direcao da
+        //cabeca quando entrar aqui é a da bola
+
+        spellBook->motion.Vth = spellBook->motion.HeadYaw*0.7; // SETA A VELOCIDADE ANGULAR PARA 0 GRAUS
+        spellBook->motion.HeadYaw = Deg2Rad(0.0);
+
         cout<<"estou andando"<<endl<<endl;
-        spellBook->motion.Vx = 0.1;
+        spellBook->motion.Vx = 0.08;
     }
     else{
         spellBook->motion.Vx = 0.0;
@@ -250,25 +260,25 @@ void TraineeRole1::perseguir(){
         }
     }
 
-    if(spellBook->perception.vision.ball.BallDistance <= 0.15)
+    if(spellBook->perception.vision.ball.BallDistance <= kickDistance )
     {
         distanciaParaChutar = spellBook->perception.vision.ball.BallDistance;
         cout<<"distancia para chutar= "<<distanciaParaChutar<<endl<<endl;
     }
-    if(distanciaParaChutar <= 0.15)
+
+
+    if(distanciaParaChutar <= kickDistance)
     {
         cout<<"distancia para chutar= "<<distanciaParaChutar<<endl<<endl;
         cout<<"to querendo chutar = "<<getTimerKick()<<endl;
-        if(getTimerKick()<=80)
+        if(getTimerKick()<=70)
         {
             cout<<"TimerChute = "<<getTimerKick()<<endl;
             attTimerKick(); 
             chuta();
-
         }
         else{
-            
-            cout<<"ja chutei"<<getTimerKick()<<endl;
+            cout<<"JA CHUTEI AQUI"<<endl;
             spellBook->motion.KickLeft = false; 
             spellBook->motion.Vx = 0;
             spellBook->motion.Vy = 0; 
@@ -281,8 +291,6 @@ void TraineeRole1::perseguir(){
     
 }
 
-
-
 void TraineeRole1::chuta()
 {
     cout<<"Ta chutando"<<endl;
@@ -291,6 +299,16 @@ void TraineeRole1::chuta()
     spellBook->motion.HeadPitch = Deg2Rad(0.0f); 
     spellBook->motion.HeadYaw = Deg2Rad(0.0f);
     spellBook->motion.KickLeft = true; 
+}
+
+void TraineeRole1::pararDeChutar(){
+    cout<<"JA CHUTEI AQUI"<<endl;
+    spellBook->motion.KickLeft = false; 
+    spellBook->motion.Vth = Deg2Rad(0);
+    spellBook->motion.Vx = 0;
+    spellBook->motion.Vy = 0; 
+    spellBook->motion.HeadPitch = Deg2Rad(0.0f); 
+    spellBook->motion.HeadYaw = Deg2Rad(0.0f);
 }
 
 
