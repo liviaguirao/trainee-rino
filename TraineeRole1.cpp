@@ -11,15 +11,13 @@
 // ssh nao@<ip do robo>
 // ./rinobot
 
-
 TraineeRole1::TraineeRole1(SpellBook *spellBook) : Role(spellBook)
 {
     onStart = false;
     timerKick = 0;
     timerHead = 0;
     direcao = 0;
-    distanciaParaChutar = 1000;
-    
+    distanciaParaChutar = 100000;
 }
 TraineeRole1::~TraineeRole1()
 {
@@ -27,9 +25,9 @@ TraineeRole1::~TraineeRole1()
 
 void TraineeRole1::Tick(float ellapsedTime, const SensorValues &sensor)
 {
-    //spellBook->strategy.MoveHead = false;
-    // spellBook->motion.HeadYaw = 0;
-    spellBook->motion.HeadSpeedYaw = 0.2f;//5 graus por execucao
+    // spellBook->strategy.MoveHead = false;
+    //  spellBook->motion.HeadYaw = 0;
+    spellBook->motion.HeadSpeedYaw = 0.2f; // 5 graus por execucao
     spellBook->motion.HeadSpeedPitch = 0.2f;
 
     if ((spellBook->strategy.GameState == STATE_READY || spellBook->strategy.GameState == STATE_PLAYING) && !onStart)
@@ -67,47 +65,62 @@ void TraineeRole1::Tick(float ellapsedTime, const SensorValues &sensor)
         spellBook->motion.KickRight = false; // CUIDADO! se verdadeiro o robo chuta com a direita. CUIDADO! O robo pode cair!
         */
         // informacoes disponiveis:
-            // spellBook->perception.vision.ball.BallDetected // SE ESTA VENDO A BOLA
-            // spellBook->perception.vision.ball.BallLostCount // a quantas iteracoes o robo nao ve bola
-            // spellBook->perception.vision.ball.TimeSinceBallSeen // a quanto tempo o robo nao ve a bola
-            // spellBook->perception.vision.ball.BallDistance // DISTANCIA ATE A BOLA em metros
-            // spellBook->perception.vision.ball.BallPitch // ANGULACAO DA BOLA EM pra cima e pra baixo
-            // (spellBook->perception.vision.ball.BallYaw > Deg2Rad(10.0f)){ // ANGULACAO DA BOLA pros lados
-                // 	cout << "hello!" << endl;
-            // } 
-            // spellBook->motion.HeadPitch = Deg2Rad(24.0f); // OLHA PRA BAIXO
-            
-            penalti();
+        // spellBook->perception.vision.ball.BallDetected // SE ESTA VENDO A BOLA
+        // spellBook->perception.vision.ball.BallLostCount // a quantas iteracoes o robo nao ve bola
+        // spellBook->perception.vision.ball.TimeSinceBallSeen // a quanto tempo o robo nao ve a bola
+        // spellBook->perception.vision.ball.BallDistance // DISTANCIA ATE A BOLA em metros
+        // spellBook->perception.vision.ball.BallPitch // ANGULACAO DA BOLA EM pra cima e pra baixo
+        // (spellBook->perception.vision.ball.BallYaw > Deg2Rad(10.0f)){ // ANGULACAO DA BOLA pros lados
+        // 	cout << "hello!" << endl;
+        // }
+        // spellBook->motion.HeadPitch = Deg2Rad(24.0f); // OLHA PRA BAIXO
+
+        penalti();
     }
 }
 
-
-void TraineeRole1::penalti(){
-    if(spellBook->perception.vision.ball.BallDistance > kickDistance)
+// função principal onde se ele esta longe da bola ele tem duas opções, ou ele vai atras dela se a
+// esta vendo, ou procura ela caso não esteja a vendo. E se ele está perto da bola realiza os processos de chute ao gol.
+void TraineeRole1::penalti()
+{
+    if (spellBook->perception.vision.ball.BallDistance > kickDistance)
     {
-        if(spellBook->perception.vision.ball.BallDetected)
+        if (spellBook->perception.vision.ball.BallDetected)
         {
-         perseguir();
+            perseguir();
         }
-        else{
-         procura();
+        else
+        {
+            spellBook->motion.Vx = 0.0;
+            cout << "nao achei a bola" << endl
+                 << endl;
+            procura();
         }
-
-        
     }
-    else{
-        perseguir();
+    else
+    {
+        if (spellBook->perception.vision.ball.BallDistance <= kickDistance)
+        {
+            distanciaParaChutar = spellBook->perception.vision.ball.BallDistance;
+            cout << "distancia para chutar= " << distanciaParaChutar << endl
+                 << endl;
+        }
+    }
+
+    if (distanciaParaChutar <= kickDistance)
+    {
+        chuta();
     }
 }
 
-//FUNÇÃO PRA PROCURAR 
-
+// FUNÇÃO PRA PROCURAR
 bool TraineeRole1::procura()
 {
     timerHead++;
-    if(timerHead > 80){
+    if (timerHead > 40)
+    {
         direcao++;
-        timerHead =0;
+        timerHead = 0;
     }
     switch (direcao)
     {
@@ -169,151 +182,158 @@ bool TraineeRole1::procura()
         direcao = 0;
         break;
     }
-   
-    
 }
 
+
+// direções para procura
 void TraineeRole1::centralizar()
 {
-    
     spellBook->motion.HeadPitch = Deg2Rad(0.0f);
     spellBook->motion.HeadYaw = Deg2Rad(0.0f);
 }
 bool TraineeRole1::ProcuraCentro()
 {
-    if(spellBook->perception.vision.ball.BallDetected)
+    if (spellBook->perception.vision.ball.BallDetected)
     {
         return true;
     }
-        
-    return false ;
+    else
+    {
+        return false;
+    }
 }
 bool TraineeRole1::ProcuraCentroEmbaixo()
-{  
-    spellBook->motion.HeadPitch = Deg2Rad(70.0f);
-    if(spellBook->perception.vision.ball.BallDetected)
+{
+    abaixaCabeca();
+    if (spellBook->perception.vision.ball.BallDetected)
     {
         return true;
     }
-    return false ;
+    else
+    {
+        return false;
+    }
 }
 
 bool TraineeRole1::ProcuraDireita()
 {
-    spellBook->motion.HeadYaw = Deg2Rad(-45.0f);
-    if(spellBook->perception.vision.ball.BallDetected)
+    spellBook->motion.HeadYaw += Deg2Rad(-1.0f);
+    if (spellBook->perception.vision.ball.BallDetected)
     {
+        spellBook->motion.Vth = -Deg2Rad(5.0f); // SETA A VELOCIDADE angular para virar o corpo para direita
         return true;
     }
-    return false ;
+    else
+    {
+        return false;
+    }
 }
 
 bool TraineeRole1::ProcuraDireitaEmbaixo()
 {
-    spellBook->motion.HeadPitch = Deg2Rad(70.0f);
-    if(spellBook->perception.vision.ball.BallDetected)
+    spellBook->motion.Vth = Deg2Rad(0.0f); // SETA A VELOCIDADE ANGULAR PARA 0 GRAUS para procurar em baixo e nao continuar virando enquanto isso
+    abaixaCabeca();
+    if (spellBook->perception.vision.ball.BallDetected)
     {
         return true;
     }
-    return false ;
+    else
+    {
+        return false;
+    }
 }
+
 bool TraineeRole1::ProcuraEsquerda()
 {
-    spellBook->motion.HeadYaw = Deg2Rad(45.0f);
-    if(spellBook->perception.vision.ball.BallDetected)
-        {
-            return true;
-        }
-    return false ;
+    spellBook->motion.HeadYaw += Deg2Rad(1.0f);
+    if (spellBook->perception.vision.ball.BallDetected)
+    {
+        spellBook->motion.Vth = Deg2Rad(5.0f); // SETA A VELOCIDADE ANGULAR
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
+
 bool TraineeRole1::ProcuraEsquerdaEmbaixo()
 {
-    spellBook->motion.HeadPitch = Deg2Rad(70.0f);
-    if(spellBook->perception.vision.ball.BallDetected)
-        {
-            return true;
-        }
-    return false ;
+    spellBook->motion.Vth = Deg2Rad(0.0f);
+    abaixaCabeca();
+    if (spellBook->perception.vision.ball.BallDetected)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
-void TraineeRole1::perseguir(){
-    cout<<"distancia = "<< spellBook->perception.vision.ball.BallDistance <<endl<<endl;
-    if(spellBook->perception.vision.ball.BallDistance > kickDistance && spellBook->perception.vision.ball.BallDetected)
-    {
-        //esta longe da bola mas esta vendo ela
-        spellBook->motion.HeadPitch = -(spellBook->perception.vision.ball.BallPitch);
-        //as novas funcoes de procuraEsquerda/Direita sao incrementais, logo a direcao da
-        //cabeca quando entrar aqui é a da bola
-
-        spellBook->motion.Vth = spellBook->motion.HeadYaw*0.7; // SETA A VELOCIDADE ANGULAR PARA 0 GRAUS
-        spellBook->motion.HeadYaw = Deg2Rad(0.0);
-
-        cout<<"estou andando"<<endl<<endl;
-        spellBook->motion.Vx = 0.08;
-    }
-    else{
-        spellBook->motion.Vx = 0.0;
-        if(!spellBook->perception.vision.ball.BallDetected)
-        {
-            cout<<"nao achei a bola"<<endl<<endl;
-            procura(); 
-        }
-    }
-
-    if(spellBook->perception.vision.ball.BallDistance <= kickDistance )
-    {
-        distanciaParaChutar = spellBook->perception.vision.ball.BallDistance;
-        cout<<"distancia para chutar= "<<distanciaParaChutar<<endl<<endl;
-    }
-
-
-    if(distanciaParaChutar <= kickDistance)
-    {
-        cout<<"distancia para chutar= "<<distanciaParaChutar<<endl<<endl;
-        cout<<"to querendo chutar = "<<getTimerKick()<<endl;
-        if(getTimerKick()<=70)
-        {
-            cout<<"TimerChute = "<<getTimerKick()<<endl;
-            attTimerKick(); 
-            chuta();
-        }
-        else{
-            cout<<"JA CHUTEI AQUI"<<endl;
-            spellBook->motion.KickLeft = false; 
-            spellBook->motion.Vx = 0;
-            spellBook->motion.Vy = 0; 
-            spellBook->motion.HeadPitch = Deg2Rad(0.0f); 
-            spellBook->motion.HeadYaw = Deg2Rad(0.0f);
-    
-        }    
-
-    }
-    
+void TraineeRole1::abaixaCabeca()
+{
+    spellBook->motion.HeadPitch += Deg2Rad(1.0f);
 }
 
+// anda atrás da bola para chegar perto dela
+void TraineeRole1::perseguir()
+{
+    cout << "distancia = " << spellBook->perception.vision.ball.BallDistance << endl
+         << endl;
+
+    // esta longe da bola mas esta vendo ela
+    spellBook->motion.HeadPitch = -(spellBook->perception.vision.ball.BallPitch);
+
+    cout << "virei " << spellBook->motion.HeadYaw << endl
+         << endl;
+    cout << "estou andando" << endl
+         << endl;
+
+    spellBook->motion.Vth = Deg2Rad(0);
+    spellBook->motion.Vx = 0.08;
+}
+
+// função para realizar os processos de chute ao gol
 void TraineeRole1::chuta()
 {
-    cout<<"Ta chutando"<<endl;
-    spellBook->motion.Vx = 0;
-    spellBook->motion.Vy = 0; 
-    spellBook->motion.HeadPitch = Deg2Rad(0.0f); 
-    spellBook->motion.HeadYaw = Deg2Rad(0.0f);
-    spellBook->motion.KickLeft = true; 
+    cout << "distancia para chutar= " << distanciaParaChutar << endl
+         << endl;
+    cout << "to querendo chutar = " << getTimerKick() << endl;
+    if (getTimerKick() <= 70)
+    {
+        cout << "TimerChute = " << getTimerKick() << endl;
+        attTimerKick();
+        chute();
+    }
+    else
+    {
+        pararDeChutar();
+    }
 }
 
-void TraineeRole1::pararDeChutar(){
-    cout<<"JA CHUTEI AQUI"<<endl;
-    spellBook->motion.KickLeft = false; 
+// chuta a bola
+void TraineeRole1::chute()
+{
+    cout << "Ta chutando" << endl;
+    spellBook->motion.Vx = 0;
+    spellBook->motion.Vy = 0;
+    spellBook->motion.Vth = Deg2Rad(0);
+    spellBook->motion.HeadPitch = Deg2Rad(0.0f);
+    spellBook->motion.HeadYaw = Deg2Rad(0.0f);
+    spellBook->motion.KickLeft = true;
+}
+
+// para de chutar a bola
+void TraineeRole1::pararDeChutar()
+{
+    cout << "JA CHUTEI AQUI" << endl;
     spellBook->motion.Vth = Deg2Rad(0);
     spellBook->motion.Vx = 0;
-    spellBook->motion.Vy = 0; 
-    spellBook->motion.HeadPitch = Deg2Rad(0.0f); 
+    spellBook->motion.Vy = 0;
+    spellBook->motion.HeadPitch = Deg2Rad(0.0f);
     spellBook->motion.HeadYaw = Deg2Rad(0.0f);
+    spellBook->motion.KickLeft = false;
 }
-
-
-
-
-
 
 
