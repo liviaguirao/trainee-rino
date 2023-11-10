@@ -40,6 +40,9 @@ public:
     bool ProcuraEsquerdaEmbaixo();
     void perseguir();
     void chuta();
+    void chute();
+    void pararDeChutar();
+    void abaixaCabeca();
 
 
 };
