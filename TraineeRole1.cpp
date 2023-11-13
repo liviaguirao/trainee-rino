@@ -117,7 +117,7 @@ void TraineeRole1::penalti()
 bool TraineeRole1::procura()
 {
     timerHead++;
-    if (timerHead > 40)
+    if (timerHead > 45)
     {
         direcao++;
         timerHead = 0;
@@ -184,17 +184,20 @@ bool TraineeRole1::procura()
     }
 }
 
-
 // direções para procura
 void TraineeRole1::centralizar()
 {
+    
+    spellBook->motion.Vth = (spellBook->motion.HeadYaw*0.9); //para centralizar o corpo tbm 
     spellBook->motion.HeadPitch = Deg2Rad(0.0f);
     spellBook->motion.HeadYaw = Deg2Rad(0.0f);
 }
 bool TraineeRole1::ProcuraCentro()
 {
+    spellBook->motion.Vth = Deg2Rad(0.0f);
     if (spellBook->perception.vision.ball.BallDetected)
     {
+        spellBook->motion.Vth = spellBook->motion.HeadYaw*0.9;
         return true;
     }
     else
@@ -204,6 +207,7 @@ bool TraineeRole1::ProcuraCentro()
 }
 bool TraineeRole1::ProcuraCentroEmbaixo()
 {
+    spellBook->motion.Vth = Deg2Rad(0.0f);
     abaixaCabeca();
     if (spellBook->perception.vision.ball.BallDetected)
     {
@@ -217,10 +221,10 @@ bool TraineeRole1::ProcuraCentroEmbaixo()
 
 bool TraineeRole1::ProcuraDireita()
 {
-    spellBook->motion.HeadYaw += Deg2Rad(-1.0f);
+    spellBook->motion.HeadYaw += Deg2Rad(1.0f);
     if (spellBook->perception.vision.ball.BallDetected)
     {
-        spellBook->motion.Vth = -Deg2Rad(5.0f); // SETA A VELOCIDADE angular para virar o corpo para direita
+        spellBook->motion.Vth = -(spellBook->motion.HeadYaw*0.9); //a velocidade tanto da esquerda como da direita ta com sinal negativa pq com o jogo de sinal (-)(-)=+ e (+)(-)=- ,ai não entendi muito bem, mas pelo menos cabeca e corpo foram para o mesmo lado
         return true;
     }
     else
@@ -231,7 +235,7 @@ bool TraineeRole1::ProcuraDireita()
 
 bool TraineeRole1::ProcuraDireitaEmbaixo()
 {
-    spellBook->motion.Vth = Deg2Rad(0.0f); // SETA A VELOCIDADE ANGULAR PARA 0 GRAUS para procurar em baixo e nao continuar virando enquanto isso
+    spellBook->motion.Vth = Deg2Rad(0.0f);
     abaixaCabeca();
     if (spellBook->perception.vision.ball.BallDetected)
     {
@@ -245,10 +249,10 @@ bool TraineeRole1::ProcuraDireitaEmbaixo()
 
 bool TraineeRole1::ProcuraEsquerda()
 {
-    spellBook->motion.HeadYaw += Deg2Rad(1.0f);
+    spellBook->motion.HeadYaw += Deg2Rad(-1.0f);
     if (spellBook->perception.vision.ball.BallDetected)
     {
-        spellBook->motion.Vth = Deg2Rad(5.0f); // SETA A VELOCIDADE ANGULAR
+        spellBook->motion.Vth = -(spellBook->motion.HeadYaw*0.9);
         return true;
     }
     else
@@ -282,15 +286,15 @@ void TraineeRole1::perseguir()
     cout << "distancia = " << spellBook->perception.vision.ball.BallDistance << endl
          << endl;
 
-    // esta longe da bola mas esta vendo ela
-    spellBook->motion.HeadPitch = -(spellBook->perception.vision.ball.BallPitch);
+    
+    spellBook->motion.HeadPitch = -(spellBook->perception.vision.ball.BallPitch); //essa linha de codigo aqui ta boa, nao tira ela nao kkk
 
     cout << "virei " << spellBook->motion.HeadYaw << endl
          << endl;
     cout << "estou andando" << endl
          << endl;
 
-    spellBook->motion.Vth = Deg2Rad(0);
+    spellBook->motion.Vth = Deg2Rad(0.0f);
     spellBook->motion.Vx = 0.08;
 }
 
@@ -335,5 +339,3 @@ void TraineeRole1::pararDeChutar()
     spellBook->motion.HeadYaw = Deg2Rad(0.0f);
     spellBook->motion.KickLeft = false;
 }
-
-
