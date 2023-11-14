@@ -79,8 +79,16 @@ void TraineeRole1::Tick(float ellapsedTime, const SensorValues &sensor)
     }
 }
 
+
+
+
+
+
 // função principal onde se ele esta longe da bola ele tem duas opções, ou ele vai atras dela se a
 // esta vendo, ou procura ela caso não esteja a vendo. E se ele está perto da bola realiza os processos de chute ao gol.
+
+
+//como não conseguimos testar bem os codigos da vth e ficamos mudando bastante eles não sabiamos se estava correto, e tambem eles eram mais uteis em situação de jogo, entao retiramos ele daqui. Mas nos videos do slide esta um pouco da exercusão com os codigos de vth.
 void TraineeRole1::penalti()
 {
     if (spellBook->perception.vision.ball.BallDistance > kickDistance)
@@ -91,10 +99,11 @@ void TraineeRole1::penalti()
         }
         else
         {
+            spellBook->motion.Vy = 0.0;
             spellBook->motion.Vx = 0.0;
-            cout << "nao achei a bola" << endl
-                 << endl;
-            procura();
+            if(spellBook->perception.vision.ball.TimeSinceBallSeen > 60){ //considerando o tempo em segundos, 1 minutos sem ver a bola 
+                procura();
+            }
         }
     }
     else
@@ -102,8 +111,7 @@ void TraineeRole1::penalti()
         if (spellBook->perception.vision.ball.BallDistance <= kickDistance)
         {
             distanciaParaChutar = spellBook->perception.vision.ball.BallDistance;
-            cout << "distancia para chutar= " << distanciaParaChutar << endl
-                 << endl;
+            
         }
     }
 
@@ -112,6 +120,16 @@ void TraineeRole1::penalti()
         chuta();
     }
 }
+
+
+
+
+
+
+
+
+
+
 
 // FUNÇÃO PRA PROCURAR
 bool TraineeRole1::procura()
@@ -188,16 +206,13 @@ bool TraineeRole1::procura()
 void TraineeRole1::centralizar()
 {
     
-    spellBook->motion.Vth = (spellBook->motion.HeadYaw*0.9); //para centralizar o corpo tbm 
     spellBook->motion.HeadPitch = Deg2Rad(0.0f);
     spellBook->motion.HeadYaw = Deg2Rad(0.0f);
 }
 bool TraineeRole1::ProcuraCentro()
 {
-    spellBook->motion.Vth = Deg2Rad(0.0f);
     if (spellBook->perception.vision.ball.BallDetected)
     {
-        spellBook->motion.Vth = spellBook->motion.HeadYaw*0.9;
         return true;
     }
     else
@@ -207,7 +222,6 @@ bool TraineeRole1::ProcuraCentro()
 }
 bool TraineeRole1::ProcuraCentroEmbaixo()
 {
-    spellBook->motion.Vth = Deg2Rad(0.0f);
     abaixaCabeca();
     if (spellBook->perception.vision.ball.BallDetected)
     {
@@ -224,7 +238,6 @@ bool TraineeRole1::ProcuraDireita()
     spellBook->motion.HeadYaw += Deg2Rad(1.0f);
     if (spellBook->perception.vision.ball.BallDetected)
     {
-        spellBook->motion.Vth = -(spellBook->motion.HeadYaw*0.9); //a velocidade tanto da esquerda como da direita ta com sinal negativa pq com o jogo de sinal (-)(-)=+ e (+)(-)=- ,ai não entendi muito bem, mas pelo menos cabeca e corpo foram para o mesmo lado
         return true;
     }
     else
@@ -235,7 +248,6 @@ bool TraineeRole1::ProcuraDireita()
 
 bool TraineeRole1::ProcuraDireitaEmbaixo()
 {
-    spellBook->motion.Vth = Deg2Rad(0.0f);
     abaixaCabeca();
     if (spellBook->perception.vision.ball.BallDetected)
     {
@@ -252,18 +264,15 @@ bool TraineeRole1::ProcuraEsquerda()
     spellBook->motion.HeadYaw += Deg2Rad(-1.0f);
     if (spellBook->perception.vision.ball.BallDetected)
     {
-        spellBook->motion.Vth = -(spellBook->motion.HeadYaw*0.9);
         return true;
     }
-    else
-    {
+    else{
         return false;
     }
 }
 
 bool TraineeRole1::ProcuraEsquerdaEmbaixo()
 {
-    spellBook->motion.Vth = Deg2Rad(0.0f);
     abaixaCabeca();
     if (spellBook->perception.vision.ball.BallDetected)
     {
@@ -280,33 +289,54 @@ void TraineeRole1::abaixaCabeca()
     spellBook->motion.HeadPitch += Deg2Rad(1.0f);
 }
 
+
+
+
+
+
+
+
+
+
+
+
 // anda atrás da bola para chegar perto dela
 void TraineeRole1::perseguir()
 {
-    cout << "distancia = " << spellBook->perception.vision.ball.BallDistance << endl
-         << endl;
-
     
-    spellBook->motion.HeadPitch = -(spellBook->perception.vision.ball.BallPitch); //essa linha de codigo aqui ta boa, nao tira ela nao kkk
+    spellBook->motion.HeadPitch = -(spellBook->perception.vision.ball.BallPitch); //ir abaixando a cabeça cada vez mais conforme chega mais proximo da bola
 
-    cout << "virei " << spellBook->motion.HeadYaw << endl
-         << endl;
-    cout << "estou andando" << endl
-         << endl;
-
-    spellBook->motion.Vth = Deg2Rad(0.0f);
+    if(spellBook->perception.vision.ball.BallYaw > Deg2Rad(105.0f) || spellBook->perception.vision.ball.BallYaw < Deg2Rad(95.0f)){ //intervalo para estar com pé esquerdo alinhado com a bola // faltou testar mais os valores
+        if(spellBook->perception.vision.ball.BallYaw > Deg2Rad(105.0f))
+        {
+            spellBook->motion.Vy = -0.05;
+           
+        }
+        if(spellBook->perception.vision.ball.BallYaw < Deg2Rad(95.0f)){
+            spellBook->motion.Vy = 0.05;
+          
+        }
+    }
+    spellBook->motion.Vy = 0.0;
     spellBook->motion.Vx = 0.08;
 }
+
+
+
+
+
+
+
+
+
+
 
 // função para realizar os processos de chute ao gol
 void TraineeRole1::chuta()
 {
-    cout << "distancia para chutar= " << distanciaParaChutar << endl
-         << endl;
-    cout << "to querendo chutar = " << getTimerKick() << endl;
+    
     if (getTimerKick() <= 70)
     {
-        cout << "TimerChute = " << getTimerKick() << endl;
         attTimerKick();
         chute();
     }
@@ -319,7 +349,6 @@ void TraineeRole1::chuta()
 // chuta a bola
 void TraineeRole1::chute()
 {
-    cout << "Ta chutando" << endl;
     spellBook->motion.Vx = 0;
     spellBook->motion.Vy = 0;
     spellBook->motion.Vth = Deg2Rad(0);
@@ -331,7 +360,6 @@ void TraineeRole1::chute()
 // para de chutar a bola
 void TraineeRole1::pararDeChutar()
 {
-    cout << "JA CHUTEI AQUI" << endl;
     spellBook->motion.Vth = Deg2Rad(0);
     spellBook->motion.Vx = 0;
     spellBook->motion.Vy = 0;
